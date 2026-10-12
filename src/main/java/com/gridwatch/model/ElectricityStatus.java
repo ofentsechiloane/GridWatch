@@ -1,4 +1,3 @@
 package com.gridwatch.model;
 
-public class ElectricityStatus {
-}
+public enum ElectricityStatus { ON, OFF, UNSTABLE, RESTORED }
