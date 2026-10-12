@@ -2,15 +2,20 @@
 
 ## Cloud-Based Community and IoT Electricity Outage Detection Platform
 
-GridWatch is a cloud-based platform designed to detect, analyze, and visualize localized electricity outages and power instability using community reports, geographic analysis, and optional IoT devices.
+GridWatch is a cloud-based platform designed to detect, analyze, and visualize localized
+electricity outages and power instability using community reports, geographic analysis, and
+optional IoT devices.
 
-The platform addresses a common problem in South Africa: determining whether a power interruption is an isolated household problem, a localized fault, or part of a wider electricity disruption.
+The platform addresses a common problem in South Africa: determining whether a power 
+interruption is an isolated household problem, a localized fault, or part of a wider
+electricity disruption.
 
 ---
 
 ## Problem Statement
 
-Electricity interruptions can occur for many reasons, including scheduled maintenance, infrastructure failures, localized faults, equipment problems, and broader grid instability.
+Electricity interruptions can occur for many reasons, including scheduled maintenance, 
+infrastructure failures, localized faults, equipment problems, and broader grid instability.
 
 When electricity goes off, users often have limited information about:
 
@@ -22,7 +27,8 @@ When electricity goes off, users often have limited information about:
 
 Existing information sources may not provide sufficiently localized or real-time information.
 
-GridWatch aims to provide a community-driven source of localized electricity disruption information.
+GridWatch aims to provide a community-driven source of localized electricity disruption
+information.
 
 ---
 
@@ -39,9 +45,11 @@ The cloud platform analyzes reports based on:
 * Report reliability
 * Optional IoT sensor data
 
-When multiple reports indicate a disruption within a specific geographic area and time period, GridWatch can identify a potential outage event.
+When multiple reports indicate a disruption within a specific geographic area and time period,
+GridWatch can identify a potential outage event.
 
-The system then presents the information through an API and, eventually, a web-based map and dashboard.
+The system then presents the information through an API and, eventually, a web-based map and 
+dashboard.
 
 ---
 
