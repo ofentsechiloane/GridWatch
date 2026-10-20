@@ -60,6 +60,9 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiError(
                 Instant.now(), 400, HttpStatus.BAD_REQUEST.getReasonPhrase(), message, details));
     }
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ApiError> handleNotFound(ResourceNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiError(
+                Instant.now(), 404, "Not Found", ex.getMessage(), Map.of()));
+    }
 }
-
-//"feat: global exception handler with clean 400 responses"
