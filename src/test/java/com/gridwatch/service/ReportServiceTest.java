@@ -28,6 +28,7 @@ class ReportServiceTest {
     private static final double LON = 28.0473;
 
     @Mock ElectricityReportRepository repository;
+    @Mock OutageDetectionService detectionService;
     @InjectMocks ReportService service;
 
     @Test
@@ -39,6 +40,7 @@ class ReportServiceTest {
         assertThat(res.status()).isEqualTo(ElectricityStatus.OFF);
         assertThat(res.latitude()).isEqualTo(LAT);
         assertThat(res.distanceMeters()).isNull();
+        verify(detectionService).evaluate(any(ElectricityReport.class));
     }
 
     @Test
