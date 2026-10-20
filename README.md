@@ -611,3 +611,7 @@ GridWatch is developed as a cloud computing project focused on applying distribu
 This project is currently intended for educational and development purposes.
 
 A formal open-source license can be added when the project is ready for public distribution.
+
+
+## Test 
+mvn test | Select-String "Tests run:|BUILD"
