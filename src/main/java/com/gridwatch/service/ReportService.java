@@ -16,15 +16,19 @@ import java.util.List;
 public class ReportService {
 
     private final ElectricityReportRepository repository;
+    private final OutageDetectionService detectionService;
 
-    public ReportService(ElectricityReportRepository repository) {
+    public ReportService(ElectricityReportRepository repository,
+                         OutageDetectionService detectionService) {
         this.repository = repository;
+        this.detectionService = detectionService;
     }
 
     @Transactional
     public ReportResponse create(ReportRequest req) {
         ElectricityReport saved = repository.save(new ElectricityReport(
                 req.status(), req.latitude(), req.longitude(), req.description()));
+        detectionService.evaluate(saved);
         return ReportResponse.from(saved, null);
     }
 
