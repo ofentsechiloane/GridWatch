@@ -1,617 +1,117 @@
 # GridWatch
 
-## Cloud-Based Community and IoT Electricity Outage Detection Platform
+Community-driven electricity outage detection for South Africa. Households report whether
+their power is `ON`, `OFF`, `UNSTABLE` or `RESTORED`; GridWatch groups nearby reports in time
+and space and decides whether there is a localized outage, and how confident it is.
 
-GridWatch is a cloud-based platform designed to detect, analyze, and visualize localized
-electricity outages and power instability using community reports, geographic analysis, and
-optional IoT devices.
+It answers: *is this just my house, or is the whole area down?*
 
-The platform addresses a common problem in South Africa: determining whether a power 
-interruption is an isolated household problem, a localized fault, or part of a wider
-electricity disruption.
+## Status
 
----
+| Area | State |
+| ---- | ----- |
+| Reporting API (create, nearby) | Done |
+| Rule-based outage detection and restoration | Done |
+| Stale outage auto-expiry | Done |
+| Outage API (list, by id, nearby) | Done |
+| Validation and JSON error responses | Done |
+| Auth, devices, "Is It Just Me?", frontend, IoT, cloud | Planned |
 
-## Problem Statement
+## Quick start
 
-Electricity interruptions can occur for many reasons, including scheduled maintenance, 
-infrastructure failures, localized faults, equipment problems, and broader grid instability.
+Requires Java 21+, Maven and Docker.
 
-When electricity goes off, users often have limited information about:
+```bash
+docker run -d --name gridwatch-db \
+  -e POSTGRES_DB=gridwatch -e POSTGRES_USER=gridwatch -e POSTGRES_PASSWORD=gridwatch \
+  -p 5432:5432 -v gridwatch-data:/var/lib/postgresql/data postgres:16
 
-* Whether the problem affects only their property
-* Whether nearby households are experiencing the same issue
-* How widespread the outage is
-* Whether the interruption is likely to be temporary or extended
-* When electricity is likely to be restored
-
-Existing information sources may not provide sufficiently localized or real-time information.
-
-GridWatch aims to provide a community-driven source of localized electricity disruption
-information.
-
----
-
-## Proposed Solution
-
-GridWatch collects electricity status reports from users and optional IoT monitoring devices.
-
-The cloud platform analyzes reports based on:
-
-* Geographic proximity
-* Time of occurrence
-* Electricity status
-* Number of nearby reports
-* Report reliability
-* Optional IoT sensor data
-
-When multiple reports indicate a disruption within a specific geographic area and time period,
-GridWatch can identify a potential outage event.
-
-The system then presents the information through an API and, eventually, a web-based map and 
-dashboard.
-
----
-
-## Core Features
-
-### Community Reporting
-
-Users can report their current electricity status:
-
-* `ON` — Electricity is available
-* `OFF` — Electricity is unavailable
-* `UNSTABLE` — Electricity is experiencing instability
-* `RESTORED` — Electricity has returned
-
-Each report can contain:
-
-* Geographic coordinates
-* Electricity status
-* Timestamp
-* Optional description
-
----
-
-### Outage Detection
-
-GridWatch analyzes recent reports to identify potential outage events.
-
-For example:
-
-```text
-User A → Electricity OFF
-User B → Electricity OFF
-User C → Electricity OFF
-User D → Electricity OFF
-
-       ↓
-
-Reports are geographically close
-       +
-Reports occurred within a short time period
-       ↓
-
-Potential outage detected
+mvn spring-boot:run
 ```
 
-The system assigns a confidence score to detected outages.
+Then post three nearby `OFF` reports and list outages:
 
----
-
-### "Is It Just Me?"
-
-One of GridWatch's primary features is determining whether an electricity problem is isolated.
-
-For example:
-
-```text
-Your electricity: OFF
-
-Nearby reports:
-Household A → ON
-Household B → ON
-Household C → ON
-
-Result:
-Possible isolated issue
+```bash
+for i in 1 2 3; do
+  curl -s -X POST localhost:8080/api/reports -H 'Content-Type: application/json' \
+    -d '{"status":"OFF","latitude":-26.2041,"longitude":28.0473}'; echo
+done
+curl -s localhost:8080/api/outages
 ```
 
-Alternatively:
+See [docs/HOW_IT_RUNS.md](docs/HOW_IT_RUNS.md) for the full walkthrough and troubleshooting.
 
-```text
-Your electricity: OFF
+## API
 
-Nearby reports:
-Household A → OFF
-Household B → OFF
-Household C → OFF
+| Endpoint | Description |
+| -------- | ----------- |
+| `POST /api/reports` | Submit a report (`status`, `latitude`, `longitude`, optional `description`) |
+| `GET /api/reports/nearby?lat=&lon=&radius=&minutes=` | Recent reports near a point (radius 1-50000 m, default 2000; minutes 1-1440, default 60) |
+| `GET /api/outages` | Active (non-restored) outages |
+| `GET /api/outages/{id}` | One outage, `404` if unknown |
+| `GET /api/outages/nearby?lat=&lon=&radius=` | Active outages near a point |
+| `GET /actuator/health` | Health check |
 
-Result:
-Likely localized outage
+Planned: `/api/auth/*`, `/api/devices/*`, an "Is It Just Me?" endpoint.
+
+## How detection works (short version)
+
+Three or more `OFF`/`UNSTABLE` reports within 1 km and 30 minutes make a `LIKELY` outage;
+five make it `CONFIRMED`. Two `RESTORED`/`ON` reports nearby close it, and outages with no
+activity for 3 hours are closed automatically. Details in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+## Tech stack
+
+Java 21, Spring Boot 3.5, Spring Web, Spring Data JPA, Spring Security, Bean Validation,
+PostgreSQL 16, Maven, JUnit 5 and Mockito. Planned: PostGIS, React, ESP32/MQTT, cloud hosting.
+
+## Tests
+
+```bash
+mvn test | grep -E "Tests run:|BUILD"
 ```
 
----
+## Roadmap
 
-### Geographic Analysis
+### Phase 1: Backend foundation
+- [x] Spring Boot application, Maven, PostgreSQL
+- [x] Database entities
+- [x] REST API
+- [x] Validation and error handling
 
-GridWatch uses geographic coordinates to group reports that occur within a specific area.
+### Phase 2: Electricity reporting
+- [x] Submit reports, store coordinates, retrieve nearby, timestamps
+- [ ] Report history
 
-This allows the system to estimate:
+### Phase 3: Outage detection
+- [x] Geographic clustering, time-window analysis, confidence scoring
+- [x] Create and update outages, detect restoration
 
-* Outage location
-* Approximate affected radius
-* Number of affected reports
-* Geographic concentration
-* Potentially affected users
+### Phase 4: Frontend
+- [ ] Dashboard, interactive map, confidence and affected areas
+- [ ] "Is It Just Me?"
 
-PostgreSQL with PostGIS can be used for advanced geographic queries.
+### Phase 5: IoT
+- [ ] Simulated device events, device auth, device API
+- [ ] ESP32 prototype
 
----
+### Phase 6: Cloud deployment
+- [ ] Containerize, deploy, environment config, monitoring, logging, CI/CD
 
-### IoT Integration
+### Phase 7: Advanced analytics
+- [ ] Historical analysis, reliability stats, duration analysis, prediction
 
-GridWatch can optionally receive electricity status information from IoT devices.
+## Safety
 
-A possible architecture is:
+IoT electricity monitoring must never require anyone to touch exposed mains. Use simulated
+events during development; any hardware prototype needs isolation, certified components and
+qualified supervision.
 
-```text
-IoT Device
-    ↓
-Internet
-    ↓
-Cloud API / IoT Gateway
-    ↓
-GridWatch Backend
-    ↓
-Outage Detection Engine
-    ↓
-Database
-    ↓
-Dashboard / Notifications
-```
+## Docs
 
-IoT integration is intended to provide automated evidence that complements community reports.
-
----
-
-## System Architecture
-
-```text
-                   ┌─────────────────────┐
-                   │       Users         │
-                   │ Web / Mobile Client │
-                   └──────────┬──────────┘
-                              │
-                              ▼
-                   ┌─────────────────────┐
-                   │     REST API        │
-                   │   Spring Boot       │
-                   └──────────┬──────────┘
-                              │
-                ┌─────────────┼─────────────┐
-                │             │             │
-                ▼             ▼             ▼
-        ┌──────────────┐ ┌──────────┐ ┌──────────────┐
-        │ PostgreSQL   │ │ Detection│ │ Notification │
-        │ + PostGIS    │ │ Engine   │ │   Service    │
-        └──────────────┘ └────┬─────┘ └──────────────┘
-                              │
-                              ▼
-                       ┌─────────────┐
-                       │ Outage Data │
-                       │ & Analytics │
-                       └─────────────┘
-
-          Optional IoT Devices
-                   │
-                   ▼
-              Cloud Ingestion
-                   │
-                   └──────────────► REST API
-```
-
----
-
-## Outage Classification
-
-| Status      | Meaning                                       |
-| ----------- | --------------------------------------------- |
-| `NORMAL`    | No significant disruption detected            |
-| `POSSIBLE`  | Some evidence of an electricity disruption    |
-| `LIKELY`    | Multiple nearby reports indicate a disruption |
-| `CONFIRMED` | Strong evidence from multiple sources         |
-| `RESTORED`  | Electricity has returned                      |
-
-The exact classification rules may evolve as the detection system develops.
-
----
-
-## Outage Detection Model
-
-The initial version of GridWatch will use a rule-based detection system.
-
-A simplified detection process:
-
-```text
-New electricity report
-        ↓
-Find recent nearby reports
-        ↓
-Check number of reports
-        ↓
-Check geographic proximity
-        ↓
-Check time consistency
-        ↓
-Check optional IoT evidence
-        ↓
-Calculate confidence score
-        ↓
-Create or update outage
-```
-
-A future version may use machine learning to improve outage prediction and classification.
-
----
-
-## Technology Stack
-
-### Backend
-
-* Java
-* Spring Boot
-* Spring Web
-* Spring Data JPA
-* Spring Security
-* Bean Validation
-* Maven
-
-### Database
-
-* PostgreSQL
-* PostGIS
-
-### IoT
-
-Potential hardware:
-
-* ESP32
-* Isolated voltage/power monitoring sensors
-* MQTT or HTTPS communication
-
-### Frontend
-
-A future frontend may use:
-
-* React
-* JavaScript / TypeScript
-* Mapping APIs
-* REST API integration
-
-### Cloud
-
-Potential cloud services include:
-
-* Application hosting
-* Managed PostgreSQL
-* Object storage
-* Monitoring
-* Logging
-* Notification services
-
-The exact cloud provider will be selected during the deployment phase.
-
----
-
-## Project Structure
-
-```text
-GridWatch/
-│
-├── src/
-│   ├── main/
-│   │   ├── java/
-│   │   │   └── com/
-│   │   │       └── gridwatch/
-│   │   │           ├── config/
-│   │   │           ├── controller/
-│   │   │           ├── detection/
-│   │   │           ├── dto/
-│   │   │           ├── exception/
-│   │   │           ├── model/
-│   │   │           ├── repository/
-│   │   │           └── service/
-│   │   │
-│   │   └── resources/
-│   │
-│   └── test/
-│       └── java/
-│           └── com/
-│               └── gridwatch/
-│
-├── iot/
-│   ├── firmware/
-│   └── device-config/
-│
-├── infrastructure/
-│   ├── cloud/
-│   └── deployment/
-│
-├── docs/
-│
-├── pom.xml
-├── README.md
-└── .gitignore
-```
-
----
-
-## Planned API
-
-### Authentication
-
-```text
-POST /api/auth/register
-POST /api/auth/login
-```
-
-### Electricity Reports
-
-```text
-POST /api/reports
-GET  /api/reports/nearby
-```
-
-### Outages
-
-```text
-GET /api/outages
-GET /api/outages/{id}
-GET /api/outages/nearby
-```
-
-### IoT Devices
-
-```text
-POST /api/devices
-GET  /api/devices
-POST /api/devices/{id}/status
-```
-
-### System Health
-
-```text
-GET /api/health
-```
-
----
-
-## Example Electricity Report
-
-```json
-{
-  "status": "OFF",
-  "latitude": -26.2041,
-  "longitude": 28.0473,
-  "description": "Electricity went off at approximately 18:42"
-}
-```
-
----
-
-## Example Detection Scenario
-
-Consider several users reporting electricity loss within a small geographic area.
-
-```text
-18:42 — User A reports OFF
-18:44 — User B reports OFF
-18:45 — User C reports OFF
-18:47 — IoT Device D reports OFF
-```
-
-GridWatch analyzes the events and determines that:
-
-* The reports are geographically close.
-* The reports occurred within a short time window.
-* Multiple independent sources indicate the same condition.
-
-The system may therefore create an outage event with a high confidence score.
-
----
-
-## South African Context
-
-GridWatch is designed with the South African electricity environment in mind.
-
-Electricity interruptions may have different causes, including:
-
-* Scheduled interruptions
-* Infrastructure maintenance
-* Equipment failures
-* Local distribution faults
-* Unplanned outages
-* Grid instability
-
-GridWatch does not automatically assume that every electricity interruption is load-shedding.
-
-The platform instead focuses on collecting evidence and identifying localized electricity disruptions.
-
----
-
-## Privacy and Security
-
-GridWatch should follow privacy-conscious design principles.
-
-Potential measures include:
-
-* Secure authentication
-* Password hashing
-* HTTPS
-* API authorization
-* Input validation
-* Rate limiting
-* Minimal collection of personal information
-* Protection of precise location information
-* Secure IoT device authentication
-
-Location data should only be collected when necessary for outage detection and geographic analysis.
-
----
-
-## Safety Considerations
-
-IoT electricity monitoring must be designed with electrical safety as a priority.
-
-The project should not require users or students to directly interact with exposed mains electricity.
-
-Prototype devices should use appropriate electrical isolation, certified components, safe enclosures, and qualified supervision where required.
-
-During early development, simulated IoT events can be used instead of connecting hardware to mains electricity.
-
----
-
-## Development Roadmap
-
-### Phase 1 — Backend Foundation
-
-* [ ] Create Spring Boot application
-* [ ] Configure Maven
-* [ ] Configure PostgreSQL
-* [ ] Create database entities
-* [ ] Implement REST API
-* [ ] Add validation
-* [ ] Add basic error handling
-
-### Phase 2 — Electricity Reporting
-
-* [ ] Submit electricity reports
-* [ ] Store geographic coordinates
-* [ ] Retrieve nearby reports
-* [ ] Track report timestamps
-* [ ] Add report history
-
-### Phase 3 — Outage Detection
-
-* [ ] Implement geographic clustering
-* [ ] Implement time-window analysis
-* [ ] Implement confidence scoring
-* [ ] Create outage events
-* [ ] Update outage status
-* [ ] Detect restoration
-
-### Phase 4 — Frontend
-
-* [ ] Build dashboard
-* [ ] Add interactive outage map
-* [ ] Display outage confidence
-* [ ] Display affected areas
-* [ ] Add "Is It Just Me?" feature
-
-### Phase 5 — IoT
-
-* [ ] Build ESP32 prototype
-* [ ] Implement simulated electricity states
-* [ ] Connect device to cloud API
-* [ ] Authenticate devices
-* [ ] Process IoT events
-
-### Phase 6 — Cloud Deployment
-
-* [ ] Containerize application
-* [ ] Deploy backend
-* [ ] Deploy PostgreSQL
-* [ ] Configure environment variables
-* [ ] Configure monitoring
-* [ ] Configure logging
-* [ ] Configure CI/CD
-
-### Phase 7 — Advanced Analytics
-
-* [ ] Historical outage analysis
-* [ ] Reliability statistics
-* [ ] Outage duration analysis
-* [ ] Geographic trends
-* [ ] Predictive analytics
-* [ ] Machine learning experimentation
-
----
-
-## Evaluation
-
-The project can be evaluated using metrics such as:
-
-### Detection Accuracy
-
-How accurately does GridWatch identify actual outages?
-
-### Detection Latency
-
-How quickly can the platform identify a potential outage after the first reports arrive?
-
-### Geographic Accuracy
-
-How accurately does the detected outage area represent the affected area?
-
-### False Positive Rate
-
-How often does the system incorrectly classify an isolated issue as a wider outage?
-
-### System Scalability
-
-How does the system perform as the number of users, reports, and IoT devices increases?
-
-### Cloud Performance
-
-Evaluate:
-
-* Response time
-* Availability
-* Resource utilization
-* Database performance
-* Scalability
-
----
-
-## Project Status
-
-GridWatch is currently under active development.
-
-The initial implementation focuses on establishing the Spring Boot backend, database architecture, electricity reporting, and outage detection engine.
-
----
-
-## Future Development
-
-Potential future capabilities include:
-
-* Real-time outage maps
-* Mobile applications
-* Push notifications
-* SMS notifications
-* IoT device networks
-* Historical reliability analysis
-* Utility integration
-* Machine learning-based prediction
-* Automated outage restoration detection
-* Community reliability scoring
-* Cloud-based analytics dashboards
-
----
-
-## Contributors
-
-GridWatch is developed as a cloud computing project focused on applying distributed systems, cloud technologies, geographic analysis, and IoT concepts to a real-world electricity infrastructure problem.
-
----
+- [How it runs](docs/HOW_IT_RUNS.md)
+- [Architecture](docs/ARCHITECTURE.md)
 
 ## License
 
-This project is currently intended for educational and development purposes.
-
-A formal open-source license can be added when the project is ready for public distribution.
-
-
-## Test 
-mvn test | Select-String "Tests run:|BUILD"
+Educational and development use for now.
