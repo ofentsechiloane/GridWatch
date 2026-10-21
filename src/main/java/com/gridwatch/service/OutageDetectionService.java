@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -81,73 +82,15 @@ public class OutageDetectionService {
     // ---- OFF / UNSTABLE ----
 
     private Optional<Outage> handleOutageReport(ElectricityReport report) {
+        Optional<Instant> lastRestored = lastRestorationNear(report);
         List<ElectricityReport> cluster = nearbyReports(report,
-                ElectricityStatus.OFF, ElectricityStatus.UNSTABLE);
+                ElectricityStatus.OFF, ElectricityStatus.UNSTABLE).stream()
+                .filter(r -> lastRestored
+                        .map(t -> r.getCreatedAt() != null && r.getCreatedAt().isAfter(t))
+                        .orElse(true))
+                .toList();
         if (cluster.size() < minReportsPossible) {
             return Optional.empty();
         }
 
         double lat = cluster.stream().mapToDouble(ElectricityReport::getLatitude).average().orElseThrow();
-        double lon = cluster.stream().mapToDouble(ElectricityReport::getLongitude).average().orElseThrow();
-        double radius = Math.max(clusterRadiusMeters / 2, cluster.stream()
-                .mapToDouble(r -> GeoUtils.haversineMeters(lat, lon, r.getLatitude(), r.getLongitude()))
-                .max().orElse(0));
-        int count = cluster.size();
-        double confidence = confidence(count);
-        OutageStatus status = classify(count);
-
-        Outage outage = findActiveOutageNear(report)
-                .map(existing -> { existing.update(lat, lon, radius, count, confidence, status); return existing; })
-                .orElseGet(() -> new Outage(lat, lon, radius, count, confidence, status));
-        return Optional.of(outages.save(outage));
-    }
-
-    // ---- RESTORED / ON ----
-
-    private Optional<Outage> handleRestoredReport(ElectricityReport report) {
-        Optional<Outage> active = findActiveOutageNear(report);
-        if (active.isEmpty()) {
-            return Optional.empty();
-        }
-        List<ElectricityReport> restored = nearbyReports(report,
-                ElectricityStatus.RESTORED, ElectricityStatus.ON);
-        if (restored.size() >= minRestoredReports) {
-            Outage outage = active.get();
-            outage.markRestored();
-            return Optional.of(outages.save(outage));
-        }
-        return Optional.empty();
-    }
-
-    // ---- helpers ----
-
-    private List<ElectricityReport> nearbyReports(ElectricityReport centre, ElectricityStatus... statuses) {
-        Instant since = Instant.now().minus(Duration.ofMinutes(windowMinutes));
-        var box = GeoUtils.boundingBox(centre.getLatitude(), centre.getLongitude(), clusterRadiusMeters);
-        List<ElectricityStatus> wanted = List.of(statuses);
-        return reports.findInBoundingBox(since, box.minLat(), box.maxLat(), box.minLon(), box.maxLon())
-                .stream()
-                .filter(r -> wanted.contains(r.getStatus()))
-                .filter(r -> GeoUtils.haversineMeters(centre.getLatitude(), centre.getLongitude(),
-                        r.getLatitude(), r.getLongitude()) <= clusterRadiusMeters)
-                .toList();
-    }
-
-    private Optional<Outage> findActiveOutageNear(ElectricityReport report) {
-        return outages.findByStatusNot(OutageStatus.RESTORED).stream()
-                .filter(o -> GeoUtils.haversineMeters(report.getLatitude(), report.getLongitude(),
-                        o.getCenterLatitude(), o.getCenterLongitude()) <= o.getRadiusMeters() + clusterRadiusMeters)
-                .findFirst();
-    }
-
-    private OutageStatus classify(int count) {
-        if (count >= minReportsConfirmed) return OutageStatus.CONFIRMED;
-        if (count >= minReportsLikely) return OutageStatus.LIKELY;
-        return OutageStatus.POSSIBLE;
-    }
-
-    /** Simple score: grows with report count and reaches 1.0 at the "confirmed" threshold. */
-    private double confidence(int count) {
-        return Math.min(1.0, (double) count / minReportsConfirmed);
-    }
-}
