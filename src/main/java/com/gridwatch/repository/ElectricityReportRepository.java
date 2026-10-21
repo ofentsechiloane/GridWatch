@@ -1,6 +1,8 @@
 package com.gridwatch.repository;
 
 import com.gridwatch.model.ElectricityReport;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -21,4 +23,6 @@ public interface ElectricityReportRepository extends JpaRepository<ElectricityRe
                                               @Param("maxLat") double maxLat,
                                               @Param("minLon") double minLon,
                                               @Param("maxLon") double maxLon);
+
+    Page<ElectricityReport> findAllByOrderByCreatedAtDesc(Pageable pageable);
 }
