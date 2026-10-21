@@ -94,3 +94,77 @@ public class OutageDetectionService {
         }
 
         double lat = cluster.stream().mapToDouble(ElectricityReport::getLatitude).average().orElseThrow();
+        double lon = cluster.stream().mapToDouble(ElectricityReport::getLongitude).average().orElseThrow();
+        double radius = Math.max(clusterRadiusMeters / 2, cluster.stream()
+                .mapToDouble(r -> GeoUtils.haversineMeters(lat, lon, r.getLatitude(), r.getLongitude()))
+                .max().orElse(0));
+        int count = cluster.size();
+        double confidence = confidence(count);
+        OutageStatus status = classify(count);
+
+        Outage outage = findActiveOutageNear(report)
+                .map(existing -> { existing.update(lat, lon, radius, count, confidence, status); return existing; })
+                .orElseGet(() -> new Outage(lat, lon, radius, count, confidence, status));
+        return Optional.of(outages.save(outage));
+    }
+
+    // ---- RESTORED / ON ----
+
+    private Optional<Outage> handleRestoredReport(ElectricityReport report) {
+        Optional<Outage> active = findActiveOutageNear(report);
+        if (active.isEmpty()) {
+            return Optional.empty();
+        }
+        List<ElectricityReport> restored = nearbyReports(report,
+                ElectricityStatus.RESTORED, ElectricityStatus.ON);
+        if (restored.size() >= minRestoredReports) {
+            Outage outage = active.get();
+            outage.markRestored();
+            return Optional.of(outages.save(outage));
+        }
+        return Optional.empty();
+    }
+
+    // ---- helpers ----
+
+    private List<ElectricityReport> nearbyReports(ElectricityReport centre, ElectricityStatus... statuses) {
+        Instant since = Instant.now().minus(Duration.ofMinutes(windowMinutes));
+        var box = GeoUtils.boundingBox(centre.getLatitude(), centre.getLongitude(), clusterRadiusMeters);
+        List<ElectricityStatus> wanted = List.of(statuses);
+        return reports.findInBoundingBox(since, box.minLat(), box.maxLat(), box.minLon(), box.maxLon())
+                .stream()
+                .filter(r -> wanted.contains(r.getStatus()))
+                .filter(r -> GeoUtils.haversineMeters(centre.getLatitude(), centre.getLongitude(),
+                        r.getLatitude(), r.getLongitude()) <= clusterRadiusMeters)
+                .toList();
+    }
+
+    private Optional<Outage> findActiveOutageNear(ElectricityReport report) {
+        return outages.findByStatusNot(OutageStatus.RESTORED).stream()
+                .filter(o -> GeoUtils.haversineMeters(report.getLatitude(), report.getLongitude(),
+                        o.getCenterLatitude(), o.getCenterLongitude()) <= o.getRadiusMeters() + clusterRadiusMeters)
+                .findFirst();
+    }
+
+    /** Time of the most recent restoration near this report, inside the detection window. */
+    private Optional<Instant> lastRestorationNear(ElectricityReport report) {
+        Instant since = Instant.now().minus(Duration.ofMinutes(windowMinutes));
+        return outages.findByStatusAndRestoredAtAfter(OutageStatus.RESTORED, since).stream()
+                .filter(o -> GeoUtils.haversineMeters(report.getLatitude(), report.getLongitude(),
+                        o.getCenterLatitude(), o.getCenterLongitude())
+                        <= o.getRadiusMeters() + clusterRadiusMeters)
+                .map(Outage::getRestoredAt)
+                .max(Comparator.naturalOrder());
+    }
+
+    private OutageStatus classify(int count) {
+        if (count >= minReportsConfirmed) return OutageStatus.CONFIRMED;
+        if (count >= minReportsLikely) return OutageStatus.LIKELY;
+        return OutageStatus.POSSIBLE;
+    }
+
+    /** Simple score: grows with report count and reaches 1.0 at the "confirmed" threshold. */
+    private double confidence(int count) {
+        return Math.min(1.0, (double) count / minReportsConfirmed);
+    }
+}
