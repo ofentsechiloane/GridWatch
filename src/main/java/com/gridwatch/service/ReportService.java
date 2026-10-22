@@ -5,6 +5,7 @@ import com.gridwatch.dto.ReportResponse;
 import com.gridwatch.model.ElectricityReport;
 import com.gridwatch.repository.ElectricityReportRepository;
 import com.gridwatch.util.GeoUtils;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +31,14 @@ public class ReportService {
                 req.status(), req.latitude(), req.longitude(), req.description()));
         detectionService.evaluate(saved);
         return ReportResponse.from(saved, null);
+    }
+
+    /** Report history, newest first. */
+    @Transactional(readOnly = true)
+    public List<ReportResponse> history(int page, int size) {
+        return repository.findAllByOrderByCreatedAtDesc(PageRequest.of(page, size))
+                .map(r -> ReportResponse.from(r, null))
+                .getContent();
     }
 
     @Transactional(readOnly = true)
