@@ -11,6 +11,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 import java.time.Instant;
 import java.util.List;
@@ -41,6 +43,28 @@ class ReportServiceTest {
         assertThat(res.latitude()).isEqualTo(LAT);
         assertThat(res.distanceMeters()).isNull();
         verify(detectionService).evaluate(any(ElectricityReport.class));
+    }
+
+    @Test
+    void historyReturnsRequestedPageWithoutDistance() {
+        ElectricityReport r = new ElectricityReport(ElectricityStatus.OFF, LAT, LON, "out");
+        when(repository.findAllByOrderByCreatedAtDesc(PageRequest.of(1, 10)))
+                .thenReturn(new PageImpl<>(List.of(r)));
+
+        List<ReportResponse> result = service.history(1, 10);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).status()).isEqualTo(ElectricityStatus.OFF);
+        assertThat(result.get(0).distanceMeters()).isNull();
+        verify(repository).findAllByOrderByCreatedAtDesc(PageRequest.of(1, 10));
+    }
+
+    @Test
+    void historyReturnsEmptyListWhenNoReports() {
+        when(repository.findAllByOrderByCreatedAtDesc(PageRequest.of(0, 20)))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        assertThat(service.history(0, 20)).isEmpty();
     }
 
     @Test

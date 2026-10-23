@@ -70,6 +70,39 @@ class ReportControllerTest {
     }
 
     @Test
+    void historyUsesDefaults() throws Exception {
+        when(service.history(0, 20)).thenReturn(List.of(sample()));
+
+        mvc.perform(get("/api/reports"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(1));
+
+        verify(service).history(0, 20);
+    }
+
+    @Test
+    void historyPassesPageAndSize() throws Exception {
+        when(service.history(2, 50)).thenReturn(List.of());
+
+        mvc.perform(get("/api/reports").param("page", "2").param("size", "50"))
+                .andExpect(status().isOk());
+
+        verify(service).history(2, 50);
+    }
+
+    @Test
+    void historyRejectsNegativePage() throws Exception {
+        mvc.perform(get("/api/reports").param("page", "-1"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void historyRejectsOversizedPage() throws Exception {
+        mvc.perform(get("/api/reports").param("size", "101"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void nearbyUsesDefaults() throws Exception {
         when(service.findNearby(-26.2041, 28.0473, 2000.0, 60)).thenReturn(List.of(sample()));
 
