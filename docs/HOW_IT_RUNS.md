@@ -12,7 +12,7 @@ docker run -d --name gridwatch-db \
   -p 5432:5432 -v gridwatch-data:/var/lib/postgresql/data postgres:16
 ```
 
-Or, if the Docker Compose plugin is installed: `docker compose up -d`.
+Or, if the Docker Compose plugin is installed: `docker compose up -d db` (database only; plain `docker compose up --build` also runs the API on port 8080).
 
 Check it is ready:
 

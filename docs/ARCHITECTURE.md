@@ -28,11 +28,11 @@ Client (curl / future web app)
 | Package | Contents |
 | ------- | -------- |
 | `config` | `SecurityConfig` |
-| `controller` | `ReportController`, `OutageController` |
-| `dto` | `ReportRequest`, `ReportResponse`, `OutageResponse` |
+| `controller` | `ReportController`, `OutageController`, `JustMeController` |
+| `dto` | `ReportRequest`, `ReportResponse`, `OutageResponse`, `JustMeResponse` |
 | `model` | `ElectricityReport`, `Outage`, `ElectricityStatus`, `OutageStatus` |
 | `repository` | `ElectricityReportRepository`, `OutageRepository` |
-| `service` | `ReportService`, `OutageService`, `OutageDetectionService`, `OutageExpiryJob` |
+| `service` | `ReportService`, `OutageService`, `OutageDetectionService`, `OutageExpiryJob`, `JustMeService` |
 | `util` | `GeoUtils` (haversine distance, bounding box) |
 | `exception` | `GlobalExceptionHandler`, `ResourceNotFoundException` |
 

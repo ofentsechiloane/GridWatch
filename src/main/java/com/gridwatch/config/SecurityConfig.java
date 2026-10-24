@@ -13,14 +13,15 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable)
-            .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                    .requestMatchers("/api/reports/**", "/api/outages/**", "/actuator/health", "/error").permitAll()
-                .anyRequest().authenticated()
-            )
-            .httpBasic(AbstractHttpConfigurer::disable)
-            .formLogin(AbstractHttpConfigurer::disable);
+                .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/", "/index.html", "/", "/index.html", "/api/reports/**", "/api/outages/**",
+                                "/actuator/health", "/error").permitAll()
+                        .anyRequest().authenticated()
+                )
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable);
         return http.build();
     }
 }

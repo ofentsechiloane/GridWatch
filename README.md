@@ -60,8 +60,9 @@ first), a map dashboard and analytics.
 | Outage API (list, by id, nearby) | Done |
 | "Is It Just Me?" endpoint | Done |
 | Validation and JSON error responses | Done |
-| Report history | Planned |
-| Auth, devices, frontend, IoT, cloud | Planned |
+| Report history (`GET /api/reports`) | Done |
+| "Is It Just Me?" web page (`/`) | Done |
+| Auth, devices, map dashboard, IoT, cloud | Planned |
 
 ## Quick start
 
@@ -93,11 +94,18 @@ curl -s "localhost:8080/api/outages/just-me?lat=-26.2041&lon=28.0473"
 
 See [docs/HOW_IT_RUNS.md](docs/HOW_IT_RUNS.md) for the full walkthrough and troubleshooting.
 
+## Run everything with Docker
+
+    docker compose up --build
+
+Then open http://localhost:8080. Use `docker compose up -d db` if you only want the database while running `mvn spring-boot:run`.
+
 ## API
 
 | Endpoint | Description |
 | -------- | ----------- |
 | `POST /api/reports` | Submit a report (`status`, `latitude`, `longitude`, optional `description`) |
+| `GET /api/reports?page=&size=` | Report history, newest first (page from 0, size 1-100, default 20) |
 | `GET /api/reports/nearby?lat=&lon=&radius=&minutes=` | Recent reports near a point (radius 1-50000 m, default 2000; minutes 1-1440, default 60) |
 | `GET /api/outages` | Active (non-restored) outages |
 | `GET /api/outages/{id}` | One outage, `404` if unknown |
@@ -105,7 +113,7 @@ See [docs/HOW_IT_RUNS.md](docs/HOW_IT_RUNS.md) for the full walkthrough and trou
 | `GET /api/outages/just-me?lat=&lon=&radius=&minutes=` | Is it just you? Returns a `verdict` of `OUTAGE_IN_AREA`, `LIKELY_JUST_YOU` or `NOT_ENOUGH_DATA` (radius 1-50000 m, default 1000; minutes 1-1440, default 30) |
 | `GET /actuator/health` | Health check |
 
-Planned: `GET /api/reports` (history), `/api/auth/*`, `/api/devices/*`.
+Planned: `/api/auth/*`, `/api/devices/*`.
 
 ## How detection works (short version)
 
@@ -134,7 +142,7 @@ mvn test | grep -E "Tests run:|BUILD"
 
 ### Phase 2: Electricity reporting
 - [x] Submit reports, store coordinates, retrieve nearby, timestamps
-- [ ] Report history
+- [x] Report history
 
 ### Phase 3: Outage detection
 - [x] Geographic clustering, time-window analysis, confidence scoring
@@ -143,14 +151,15 @@ mvn test | grep -E "Tests run:|BUILD"
 ### Phase 4: Frontend
 - [x] "Is It Just Me?" endpoint
 - [ ] Dashboard, interactive map, confidence and affected areas
-- [ ] "Is It Just Me?" screen
+- [x] "Is It Just Me?" screen (basic page at `/`)
 
 ### Phase 5: IoT
 - [ ] Simulated device events, device auth, device API
 - [ ] ESP32 prototype
 
 ### Phase 6: Cloud deployment
-- [ ] Containerize, deploy, environment config, monitoring, logging, CI/CD
+- [x] Containerize
+- [ ] Deploy, environment config, monitoring, logging, CI/CD
 
 ### Phase 7: Advanced analytics
 - [ ] Historical analysis, reliability stats, duration analysis, prediction
