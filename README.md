@@ -178,3 +178,5 @@ qualified supervision.
 ## License
 
 Educational and development use for now.
+No Docker, or port 8080 busy? Run with the in-memory H2 database on another port: `mvn spring-boot:run -Dspring-boot.run.profiles=local -Dspring-boot.run.arguments=--server.port=8081`
+
