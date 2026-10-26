@@ -1,0 +1,24 @@
+  :root { --bg:#0f172a; --card:#1e293b; --text:#e2e8f0; --muted:#94a3b8;
+          --red:#ef4444; --amber:#f59e0b; --green:#22c55e; --blue:#3b82f6; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: system-ui, sans-serif; background:var(--bg); color:var(--text); }
+  main { max-width: 720px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { margin: 0 0 4px; } .sub { color:var(--muted); margin:0 0 24px; }
+  .card { background:var(--card); border-radius:12px; padding:16px; margin-bottom:16px; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; }
+  input { flex:1; min-width:120px; padding:8px; border-radius:8px; border:1px solid #334155;
+          background:#0f172a; color:var(--text); }
+  button { padding:10px 14px; border:0; border-radius:8px; font-weight:600; cursor:pointer; color:#fff; background:var(--blue); }
+  button.off { background:var(--red); } button.unstable { background:var(--amber); }
+  button.on, button.restored { background:var(--green); }
+  #verdict { border-left:6px solid var(--muted); }
+  #verdict.OUTAGE_IN_AREA { border-color:var(--red); }
+  #verdict.LIKELY_JUST_YOU { border-color:var(--amber); }
+  #verdict.NOT_ENOUGH_DATA { border-color:var(--muted); }
+  #verdict h2 { margin:0 0 6px; }
+  #map { height: 340px; border-radius: 8px; margin-top: 8px; }
+  .muted { color:var(--muted); font-size:.9rem; }
+  ul { list-style:none; padding:0; margin:0; }
+  li { padding:8px 0; border-bottom:1px solid #334155; } li:last-child { border:0; }
+  .tag { padding:2px 8px; border-radius:999px; font-size:.75rem; font-weight:700; background:#334155; }
+  .CONFIRMED { background:var(--red); } .LIKELY { background:var(--amber); } .POSSIBLE { background:var(--blue); }
