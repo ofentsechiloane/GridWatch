@@ -55,6 +55,17 @@
 
   <section class="card">
     <strong>Outage map</strong>
+      <div id="stats" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px">
+          <span><strong id="sActive">0</strong> active</span>
+          <span><strong id="sConfirmed">0</strong> confirmed</span>
+          <span><strong id="sReports">0</strong> reports</span>
+          <span class="muted" id="sUpdated"></span>
+      </div>
+      <div class="muted" style="margin-top:4px">
+          <span style="color:#3b82f6">●</span> Possible
+          <span style="color:#f59e0b">●</span> Likely
+          <span style="color:#ef4444">●</span> Confirmed
+      </div>
     <div id="map"></div>
     <p class="muted">Circles show the affected area: red is confirmed, amber likely, blue possible.</p>
   </section>
