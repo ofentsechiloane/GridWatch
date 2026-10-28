@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GridWatch Dashboard</title>
+    <style>
+        :root { --bg:#0f172a; --card:#1e293b; --text:#e2e8f0; --muted:#94a3b8;
+                --red:#ef4444; --amber:#f59e0b; --green:#22c55e; --blue:#3b82f6; }
+        * { box-sizing: border-box; }
+        body { margin:0; font-family: system-ui, sans-serif; background:var(--bg); color:var(--text); }
+        main { max-width: 960px; margin: 0 auto; padding: 24px 16px 48px; }
+        header { display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px; }
+        h1 { margin:0; }
+        a { color:var(--blue); }
+        .muted { color:var(--muted); font-size:.9rem; }
+        .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:16px 0; }
+        .card { background:var(--card); border-radius:12px; padding:16px; margin-bottom:16px; }
+        .stat { margin:0; border-left:6px solid var(--muted); }
+        .stat .n { font-size:2rem; font-weight:700; }
+        .stat.CONFIRMED { border-color:var(--red); }
+        .stat.LIKELY { border-color:var(--amber); }
+        .stat.POSSIBLE { border-color:var(--blue); }
+        .stat.ACTIVE { border-color:var(--green); }
+        .scroll { overflow-x:auto; }
+        table { width:100%; border-collapse:collapse; }
+        th, td { text-align:left; padding:8px; border-bottom:1px solid #334155; font-size:.9rem; white-space:nowrap; }
+        th { color:var(--muted); font-weight:600; }
+        tr:last-child td { border:0; }
+        .tag { padding:2px 8px; border-radius:999px; font-size:.75rem; font-weight:700; background:#334155; }
+        .CONFIRMED, .OFF { background:var(--red); }
+        .LIKELY, .UNSTABLE { background:var(--amber); }
+        .POSSIBLE { background:var(--blue); }
+        .ON, .RESTORED { background:var(--green); }
+        .bar { width:90px; height:8px; border-radius:999px; background:#334155; overflow:hidden; display:inline-block; vertical-align:middle; }
+        .bar > span { display:block; height:100%; background:var(--green); }
+        #err { color:var(--red); }
+    </style>
+</head>
+<body>
+<main>
+    <header>
+        <h1>GridWatch Dashboard</h1>
+        <a href="/">Is it just me?</a>
+    </header>
+    <p class="muted"><span id="updated">Loading...</span> <span id="err"></span></p>
+
+    <div class="grid">
+        <div class="card stat ACTIVE"><div class="n" id="sActive">0</div><div class="muted">Active outages</div></div>
+        <div class="card stat CONFIRMED"><div class="n" id="sConfirmed">0</div><div class="muted">Confirmed</div></div>
+        <div class="card stat LIKELY"><div class="n" id="sLikely">0</div><div class="muted">Likely</div></div>
+        <div class="card stat POSSIBLE"><div class="n" id="sPossible">0</div><div class="muted">Possible</div></div>
+        <div class="card stat"><div class="n" id="sReports">0</div><div class="muted">Reports in outages</div></div>
+        <div class="card stat"><div class="n" id="sConf">0%</div><div class="muted">Avg confidence</div></div>
+    </div>
+
+    <section class="card">
+        <strong>Active outages</strong>
+        <div class="scroll">
+            <table>
+                <thead><tr><th>Status</th><th>Reports</th><th>Confidence</th><th>Radius</th><th>Location</th><th>Started</th><th>Updated</th></tr></thead>
+                <tbody id="outageRows"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="card">
+        <strong>Recent reports</strong>
+        <div class="scroll">
+            <table>
+                <thead><tr><th>Status</th><th>Location</th><th>Description</th><th>When</th></tr></thead>
+                <tbody id="reportRows"></tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<script>
+    const $ = (id) => document.getElementById(id);
+
+    async function api(path) {
+      const res = await fetch(path);
+      if (!res.ok) throw new Error("Request failed (" + res.status + ")");
+      return res.json();
+    }
+
+    function ago(iso) {
+      const s = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
+      if (s < 60) return s + "s ago";
+      if (s < 3600) return Math.floor(s / 60) + "m ago";
+      if (s < 86400) return Math.floor(s / 3600) + "h ago";
+      return Math.floor(s / 86400) + "d ago";
+    }
+
+    function td(content) {
+      const el = document.createElement("td");
+      if (content instanceof Node) el.append(content); else el.textContent = content;
+      return el;
+    }
+
+    function tag(status) {
+      const el = document.createElement("span");
+      el.className = "tag " + status;
+      el.textContent = status;
+      return el;
+    }
+
+    function confBar(c) {
+      const bar = document.createElement("span");
+      bar.className = "bar";
+      const fill = document.createElement("span");
+      fill.style.width = Math.round(c * 100) + "%";
+      bar.append(fill);
+      const wrap = document.createElement("span");
+      wrap.append(bar, " " + Math.round(c * 100) + "%");
+      return wrap;
+    }
+
+    function emptyRow(tbody, cols, text) {
+      const tr = document.createElement("tr");
+      const cell = td(text);
+      cell.colSpan = cols;
+      cell.className = "muted";
+      tr.append(cell);
+      tbody.append(tr);
+    }
+
+    function renderStats(outages) {
+      const count = (s) => outages.filter((o) => o.status === s).length;
+      $("sActive").textContent = outages.length;
+      $("sConfirmed").textContent = count("CONFIRMED");
+      $("sLikely").textContent = count("LIKELY");
+      $("sPossible").textContent = count("POSSIBLE");
+      $("sReports").textContent = outages.reduce((a, o) => a + o.reportCount, 0);
+      const avg = outages.length ? outages.reduce((a, o) => a + o.confidence, 0) / outages.length : 0;
+      $("sConf").textContent = Math.round(avg * 100) + "%";
+    }
+
+    function renderOutages(outages) {
+      const body = $("outageRows");
+      body.replaceChildren();
+      if (outages.length === 0) return emptyRow(body, 7, "No active outages.");
+      const sorted = [...outages].sort((a, b) => b.confidence - a.confidence ||
+        new Date(b.updatedAt) - new Date(a.updatedAt));
+      for (const o of sorted) {
+        const tr = document.createElement("tr");
+        tr.append(
+          td(tag(o.status)),
+          td(o.reportCount),
+          td(confBar(o.confidence)),
+          td(Math.round(o.radiusMeters) + " m"),
+          td(o.centerLatitude.toFixed(4) + ", " + o.centerLongitude.toFixed(4)),
+          td(ago(o.startedAt)),
+          td(ago(o.updatedAt))
+        );
+        body.append(tr);
+      }
+    }
+
+    function renderReports(reports) {
+      const body = $("reportRows");
+      body.replaceChildren();
+      if (reports.length === 0) return emptyRow(body, 4, "No reports yet.");
+      for (const r of reports) {
+        const tr = document.createElement("tr");
+        tr.append(
+          td(tag(r.status)),
+          td(r.latitude.toFixed(4) + ", " + r.longitude.toFixed(4)),
+          td(r.description || "-"),
+          td(ago(r.createdAt))
+        );
+        body.append(tr);
+      }
+    }
+
+    async function load() {
+      try {
+        const [outages, reports] = await Promise.all([
+          api("/api/outages"),
+          api("/api/reports?page=0&size=15")
+        ]);
+        renderStats(outages);
+        renderOutages(outages);
+        renderReports(reports);
+        $("updated").textContent = "Updated " + new Date().toLocaleTimeString() + " (refreshes every 30s)";
+        $("err").textContent = "";
+      } catch (e) { $("err").textContent = e.message; }
+    }
+
+    load();
+    setInterval(load, 30000);
+</script>
+</body>
+</html>

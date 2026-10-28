@@ -139,11 +139,16 @@ public class OutageDetectionService {
                 .toList();
     }
 
+    /** The active outage covering this report; if several overlap, the one whose centre is closest. */
     private Optional<Outage> findActiveOutageNear(ElectricityReport report) {
         return outages.findByStatusNot(OutageStatus.RESTORED).stream()
-                .filter(o -> GeoUtils.haversineMeters(report.getLatitude(), report.getLongitude(),
-                        o.getCenterLatitude(), o.getCenterLongitude()) <= o.getRadiusMeters() + clusterRadiusMeters)
-                .findFirst();
+                .filter(o -> distanceToCentre(report, o) <= o.getRadiusMeters() + clusterRadiusMeters)
+                .min(Comparator.comparingDouble(o -> distanceToCentre(report, o)));
+    }
+
+    private static double distanceToCentre(ElectricityReport report, Outage outage) {
+        return GeoUtils.haversineMeters(report.getLatitude(), report.getLongitude(),
+                outage.getCenterLatitude(), outage.getCenterLongitude());
     }
 
     /** Time of the most recent restoration near this report, inside the detection window. */
