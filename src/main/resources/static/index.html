@@ -4,80 +4,88 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>GridWatch: Is it just me?</title>
+    <script src="/js/theme.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
-    <style>
-        :root { --bg:#0f172a; --card:#1e293b; --text:#e2e8f0; --muted:#94a3b8;
-                --red:#ef4444; --amber:#f59e0b; --green:#22c55e; --blue:#3b82f6; }
-        * { box-sizing: border-box; }
-        body { margin:0; font-family: system-ui, sans-serif; background:var(--bg); color:var(--text); }
-        main { max-width: 720px; margin: 0 auto; padding: 24px 16px 48px; }
-        h1 { margin: 0 0 4px; } .sub { color:var(--muted); margin:0 0 24px; }
-        a { color:var(--blue); }
-        .card { background:var(--card); border-radius:12px; padding:16px; margin-bottom:16px; }
-        .row { display:flex; gap:8px; flex-wrap:wrap; }
-        input { flex:1; min-width:120px; padding:8px; border-radius:8px; border:1px solid #334155;
-                background:#0f172a; color:var(--text); }
-        button { padding:10px 14px; border:0; border-radius:8px; font-weight:600; cursor:pointer; color:#fff; background:var(--blue); }
-        button.off { background:var(--red); } button.unstable { background:var(--amber); }
-        button.on, button.restored { background:var(--green); }
-        #verdict { border-left:6px solid var(--muted); }
-        #verdict.OUTAGE_IN_AREA { border-color:var(--red); }
-        #verdict.LIKELY_JUST_YOU { border-color:var(--amber); }
-        #verdict.NOT_ENOUGH_DATA { border-color:var(--muted); }
-        #verdict h2 { margin:0 0 6px; }
-        #map { height: 340px; border-radius: 8px; margin-top: 8px; }
-        .muted { color:var(--muted); font-size:.9rem; }
-        ul { list-style:none; padding:0; margin:0; }
-        li { padding:8px 0; border-bottom:1px solid #334155; } li:last-child { border:0; }
-        .tag { padding:2px 8px; border-radius:999px; font-size:.75rem; font-weight:700; background:#334155; }
-        .CONFIRMED { background:var(--red); } .LIKELY { background:var(--amber); } .POSSIBLE { background:var(--blue); }
-    </style>
+    <link rel="stylesheet" href="/css/app.css">
 </head>
 <body>
-<main>
-    <h1>GridWatch</h1>
-    <p class="sub">Is it just your house, or is the whole area down?</p>
-    <p class="muted"><a href="/dashboard.html">Open dashboard</a></p>
+<header class="topbar">
+    <div class="topbar-inner">
+        <a class="brand" href="/">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>
+            <span>GridWatch</span>
+        </a>
+        <nav class="nav">
+            <a href="/" aria-current="page">Check</a>
+            <a href="/dashboard.html">Dashboard</a>
+        </nav>
+        <button id="themeToggle" class="icon-btn" type="button" aria-label="Toggle dark mode">
+            <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+            <svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        </button>
+    </div>
+</header>
 
-    <section class="card">
-        <div class="row">
-            <input id="lat" type="number" step="any" placeholder="Latitude" value="-26.2041">
-            <input id="lon" type="number" step="any" placeholder="Longitude" value="28.0473">
-            <button id="locate" type="button">Use my location</button>
+<main class="container">
+    <div class="page-head">
+        <div>
+            <h1>Is it just me?</h1>
+            <p class="muted">Is it just your house, or is the whole area down?</p>
         </div>
-        <p class="muted" id="locMsg">Defaults to central Johannesburg. You can also click the map to set your location.</p>
-        <button id="check" type="button">Is it just me?</button>
-    </section>
+    </div>
 
-    <section class="card" id="verdict" hidden>
-        <h2 id="vTitle"></h2>
-        <p id="vMsg"></p>
-        <p class="muted" id="vStats"></p>
-    </section>
+    <div class="layout">
+        <div class="stack">
+            <section class="card">
+                <div class="card-head">
+                    <h2>Your location</h2>
+                    <button id="locate" type="button" class="btn btn-ghost">Use my location</button>
+                </div>
+                <div class="row">
+                    <label class="field">Latitude<input id="lat" type="number" step="any" value="-26.2041"></label>
+                    <label class="field">Longitude<input id="lon" type="number" step="any" value="28.0473"></label>
+                </div>
+                <p class="muted" id="locMsg">Defaults to central Johannesburg. You can also click the map to set your location.</p>
+                <button id="check" type="button" class="btn btn-block">Is it just me?</button>
+            </section>
 
-    <section class="card">
-        <strong>Outage map</strong>
-        <div id="map"></div>
-        <p class="muted">Circles show the affected area: red is confirmed, amber likely, blue possible.</p>
-    </section>
+            <section class="card verdict" id="verdict" hidden>
+                <h2 id="vTitle"></h2>
+                <p id="vMsg"></p>
+                <p class="muted" id="vStats"></p>
+            </section>
 
-    <section class="card">
-        <strong>Report your power status</strong>
-        <p class="muted">Your report helps neighbours get an answer.</p>
-        <div class="row">
-            <button class="off" data-status="OFF">Power OFF</button>
-            <button class="unstable" data-status="UNSTABLE">Unstable</button>
-            <button class="on" data-status="ON">Power ON</button>
-            <button class="restored" data-status="RESTORED">Restored</button>
+            <section class="card">
+                <div class="card-head"><h2>Report your power status</h2></div>
+                <p class="muted" style="margin-top:0">Your report helps neighbours get an answer.</p>
+                <div class="report-grid">
+                    <button class="btn btn-red" data-status="OFF">Power OFF</button>
+                    <button class="btn btn-amber" data-status="UNSTABLE">Unstable</button>
+                    <button class="btn btn-green" data-status="ON">Power ON</button>
+                    <button class="btn btn-green" data-status="RESTORED">Restored</button>
+                </div>
+                <p class="muted" id="reportMsg"></p>
+            </section>
+
+            <section class="card">
+                <div class="card-head"><h2>Active outages</h2><a href="/dashboard.html">Full dashboard</a></div>
+                <ul id="outages" class="list"><li class="muted">Loading...</li></ul>
+            </section>
         </div>
-        <p class="muted" id="reportMsg"></p>
-    </section>
 
-    <section class="card">
-        <strong>Active outages</strong>
-        <ul id="outages"><li class="muted">Loading...</li></ul>
-    </section>
+        <aside class="card map-col">
+            <div class="card-head"><h2>Outage map</h2></div>
+            <div id="map"></div>
+            <div class="legend muted">
+                <span><i class="dot dot-red"></i>Confirmed</span>
+                <span><i class="dot dot-amber"></i>Likely</span>
+                <span><i class="dot dot-blue"></i>Possible</span>
+            </div>
+        </aside>
+    </div>
 </main>
+
+<div id="toast" class="toast" role="status" hidden></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script>
@@ -87,9 +95,18 @@
       LIKELY_JUST_YOU: "Probably just your property",
       NOT_ENOUGH_DATA: "Not enough data yet"
     };
-    const COLORS = { CONFIRMED: "#ef4444", LIKELY: "#f59e0b", POSSIBLE: "#3b82f6" };
+    const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    const statusColor = (s) => ({ CONFIRMED: css("--red"), LIKELY: css("--amber"), POSSIBLE: css("--blue") }[s] || css("--muted"));
 
-    // ---- Map ----
+    let toastTimer;
+    function toast(msg) {
+      const t = $("toast");
+      t.textContent = msg;
+      t.hidden = false;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { t.hidden = true; }, 3500);
+    }
+
     const map = L.map("map").setView([parseFloat($("lat").value), parseFloat($("lon").value)], 12);
     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
@@ -98,6 +115,7 @@
     const outageLayer = L.layerGroup().addTo(map);
     const youMarker = L.marker([parseFloat($("lat").value), parseFloat($("lon").value)]).addTo(map);
     youMarker.bindTooltip("You", { permanent: false });
+    window.addEventListener("resize", () => map.invalidateSize());
 
     function moveYou(lat, lon, pan) {
       $("lat").value = Number(lat).toFixed(5);
@@ -121,7 +139,6 @@
     $("lat").addEventListener("change", syncFromInputs);
     $("lon").addEventListener("change", syncFromInputs);
 
-    // ---- API helpers ----
     function coords() {
       const lat = parseFloat($("lat").value), lon = parseFloat($("lon").value);
       if (Number.isNaN(lat) || Number.isNaN(lon)) throw new Error("Enter a valid latitude and longitude.");
@@ -135,21 +152,19 @@
       return body;
     }
 
-    // ---- Is it just me? ----
     async function checkJustMe() {
       try {
         const { lat, lon } = coords();
         const v = await api("/api/outages/just-me?lat=" + lat + "&lon=" + lon);
         $("verdict").hidden = false;
-        $("verdict").className = "card " + v.verdict;
+        $("verdict").className = "card verdict " + v.verdict;
         $("vTitle").textContent = TITLES[v.verdict];
         $("vMsg").textContent = v.message;
         $("vStats").textContent = v.offReports + " OFF/UNSTABLE and " + v.onReports +
           " ON/RESTORED reports within " + v.radiusMeters + " m in the last " + v.minutes + " min.";
-      } catch (e) { alert(e.message); }
+      } catch (e) { toast(e.message); }
     }
 
-    // ---- Reporting ----
     async function sendReport(status) {
       try {
         const { lat, lon } = coords();
@@ -159,11 +174,11 @@
           body: JSON.stringify({ status, latitude: lat, longitude: lon })
         });
         $("reportMsg").textContent = "Report sent: " + status + ".";
+        toast("Report sent: " + status);
         await Promise.all([checkJustMe(), loadOutages()]);
-      } catch (e) { $("reportMsg").textContent = e.message; }
+      } catch (e) { $("reportMsg").textContent = e.message; toast(e.message); }
     }
 
-    // ---- Outages: list + map ----
     async function loadOutages() {
       const list = $("outages");
       try {
@@ -173,25 +188,29 @@
 
         if (outages.length === 0) {
           const li = document.createElement("li");
-          li.className = "muted";
+          li.className = "empty";
           li.textContent = "No active outages reported.";
           list.append(li);
           return;
         }
 
         for (const o of outages) {
-          const summary = o.status + ": " + o.reportCount + " reports, confidence " +
-            Math.round(o.confidence * 100) + "%";
+          const pct = Math.round(o.confidence * 100);
+          const summary = o.status + ": " + o.reportCount + " reports, confidence " + pct + "%";
 
           const li = document.createElement("li");
           const tag = document.createElement("span");
           tag.className = "tag " + o.status;
           tag.textContent = o.status;
-          li.append(tag, " " + o.reportCount + " reports, confidence " + Math.round(o.confidence * 100) +
-            "%, near " + o.centerLatitude.toFixed(3) + ", " + o.centerLongitude.toFixed(3));
+          const text = document.createElement("span");
+          text.textContent = o.reportCount + " reports, " + pct + "% confidence";
+          const where = document.createElement("span");
+          where.className = "muted";
+          where.textContent = o.centerLatitude.toFixed(3) + ", " + o.centerLongitude.toFixed(3);
+          li.append(tag, text, where);
           list.append(li);
 
-          const color = COLORS[o.status] || "#94a3b8";
+          const color = statusColor(o.status);
           const circle = L.circle([o.centerLatitude, o.centerLongitude], {
             radius: Math.max(o.radiusMeters, 100),
             color, fillColor: color, fillOpacity: 0.25, weight: 2
@@ -204,7 +223,6 @@
       } catch (e) { list.textContent = e.message; }
     }
 
-    // ---- Wiring ----
     $("check").addEventListener("click", checkJustMe);
     $("locate").addEventListener("click", () => {
       if (!navigator.geolocation) { $("locMsg").textContent = "Geolocation is not supported."; return; }
@@ -215,6 +233,7 @@
     });
     document.querySelectorAll("[data-status]").forEach((b) =>
       b.addEventListener("click", () => sendReport(b.dataset.status)));
+    document.addEventListener("themechange", loadOutages);
 
     loadOutages();
     setInterval(loadOutages, 30000);

@@ -151,7 +151,7 @@ mvn test | grep -E "Tests run:|BUILD"
 ### Phase 4: Frontend
 - [x] "Is It Just Me?" endpoint
 - [x] Interactive map with affected areas (Leaflet)
-- [ ] Dashboard
+- [x] Dashboard
 - [x] "Is It Just Me?" screen (basic page at `/`)
 
 ### Phase 5: IoT

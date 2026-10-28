@@ -4,79 +4,77 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>GridWatch Dashboard</title>
-    <style>
-        :root { --bg:#0f172a; --card:#1e293b; --text:#e2e8f0; --muted:#94a3b8;
-                --red:#ef4444; --amber:#f59e0b; --green:#22c55e; --blue:#3b82f6; }
-        * { box-sizing: border-box; }
-        body { margin:0; font-family: system-ui, sans-serif; background:var(--bg); color:var(--text); }
-        main { max-width: 960px; margin: 0 auto; padding: 24px 16px 48px; }
-        header { display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px; }
-        h1 { margin:0; }
-        a { color:var(--blue); }
-        .muted { color:var(--muted); font-size:.9rem; }
-        .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:16px 0; }
-        .card { background:var(--card); border-radius:12px; padding:16px; margin-bottom:16px; }
-        .stat { margin:0; border-left:6px solid var(--muted); }
-        .stat .n { font-size:2rem; font-weight:700; }
-        .stat.CONFIRMED { border-color:var(--red); }
-        .stat.LIKELY { border-color:var(--amber); }
-        .stat.POSSIBLE { border-color:var(--blue); }
-        .stat.ACTIVE { border-color:var(--green); }
-        .scroll { overflow-x:auto; }
-        table { width:100%; border-collapse:collapse; }
-        th, td { text-align:left; padding:8px; border-bottom:1px solid #334155; font-size:.9rem; white-space:nowrap; }
-        th { color:var(--muted); font-weight:600; }
-        tr:last-child td { border:0; }
-        .tag { padding:2px 8px; border-radius:999px; font-size:.75rem; font-weight:700; background:#334155; }
-        .CONFIRMED, .OFF { background:var(--red); }
-        .LIKELY, .UNSTABLE { background:var(--amber); }
-        .POSSIBLE { background:var(--blue); }
-        .ON, .RESTORED { background:var(--green); }
-        .bar { width:90px; height:8px; border-radius:999px; background:#334155; overflow:hidden; display:inline-block; vertical-align:middle; }
-        .bar > span { display:block; height:100%; background:var(--green); }
-        #err { color:var(--red); }
-    </style>
+    <script src="/js/theme.js"></script>
+    <link rel="stylesheet" href="/css/app.css">
 </head>
 <body>
-<main>
-    <header>
-        <h1>GridWatch Dashboard</h1>
-        <a href="/">Is it just me?</a>
-    </header>
-    <p class="muted"><span id="updated">Loading...</span> <span id="err"></span></p>
+<header class="topbar">
+    <div class="topbar-inner">
+        <a class="brand" href="/">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>
+            <span>GridWatch</span>
+        </a>
+        <nav class="nav">
+            <a href="/">Check</a>
+            <a href="/dashboard.html" aria-current="page">Dashboard</a>
+        </nav>
+        <button id="themeToggle" class="icon-btn" type="button" aria-label="Toggle dark mode">
+            <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+            <svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        </button>
+    </div>
+</header>
 
-    <div class="grid">
-        <div class="card stat ACTIVE"><div class="n" id="sActive">0</div><div class="muted">Active outages</div></div>
-        <div class="card stat CONFIRMED"><div class="n" id="sConfirmed">0</div><div class="muted">Confirmed</div></div>
-        <div class="card stat LIKELY"><div class="n" id="sLikely">0</div><div class="muted">Likely</div></div>
-        <div class="card stat POSSIBLE"><div class="n" id="sPossible">0</div><div class="muted">Possible</div></div>
-        <div class="card stat"><div class="n" id="sReports">0</div><div class="muted">Reports in outages</div></div>
-        <div class="card stat"><div class="n" id="sConf">0%</div><div class="muted">Avg confidence</div></div>
+<main class="container">
+    <div class="page-head">
+        <div>
+            <h1>Dashboard</h1>
+            <p class="muted live" id="updated">Loading...</p>
+            <p class="error" id="err"></p>
+        </div>
+        <button id="refresh" type="button" class="btn btn-ghost">Refresh</button>
     </div>
 
-    <section class="card">
-        <strong>Active outages</strong>
-        <div class="scroll">
-            <table>
-                <thead><tr><th>Status</th><th>Reports</th><th>Confidence</th><th>Radius</th><th>Location</th><th>Started</th><th>Updated</th></tr></thead>
-                <tbody id="outageRows"></tbody>
-            </table>
-        </div>
-    </section>
+    <div class="stats">
+        <div class="stat"><span class="stat-label"><i class="dot dot-green"></i>Active outages</span><span class="stat-n" id="sActive">0</span></div>
+        <div class="stat"><span class="stat-label"><i class="dot dot-red"></i>Confirmed</span><span class="stat-n" id="sConfirmed">0</span></div>
+        <div class="stat"><span class="stat-label"><i class="dot dot-amber"></i>Likely</span><span class="stat-n" id="sLikely">0</span></div>
+        <div class="stat"><span class="stat-label"><i class="dot dot-blue"></i>Possible</span><span class="stat-n" id="sPossible">0</span></div>
+        <div class="stat"><span class="stat-label">Reports in outages</span><span class="stat-n" id="sReports">0</span></div>
+        <div class="stat"><span class="stat-label">Avg confidence</span><span class="stat-n" id="sConf">0%</span></div>
+    </div>
 
-    <section class="card">
-        <strong>Recent reports</strong>
-        <div class="scroll">
-            <table>
-                <thead><tr><th>Status</th><th>Location</th><th>Description</th><th>When</th></tr></thead>
-                <tbody id="reportRows"></tbody>
-            </table>
-        </div>
-    </section>
+    <div class="stack">
+        <section class="card">
+            <div class="card-head"><h2>Active outages</h2></div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Status</th><th>Reports</th><th>Confidence</th><th>Radius</th><th>Location</th><th>Started</th><th>Updated</th></tr></thead>
+                    <tbody id="outageRows"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="card">
+            <div class="card-head">
+                <h2>Recent reports</h2>
+                <div class="chips" id="chips"></div>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Status</th><th>Location</th><th>Description</th><th>When</th></tr></thead>
+                    <tbody id="reportRows"></tbody>
+                </table>
+            </div>
+        </section>
+    </div>
 </main>
 
 <script>
     const $ = (id) => document.getElementById(id);
+    const FILTERS = [["ALL", "All"], ["OFF", "Off"], ["UNSTABLE", "Unstable"], ["ON", "On"], ["RESTORED", "Restored"]];
+    let reports = [];
+    let filter = "ALL";
 
     async function api(path) {
       const res = await fetch(path);
@@ -112,7 +110,7 @@
       fill.style.width = Math.round(c * 100) + "%";
       bar.append(fill);
       const wrap = document.createElement("span");
-      wrap.append(bar, " " + Math.round(c * 100) + "%");
+      wrap.append(bar, Math.round(c * 100) + "%");
       return wrap;
     }
 
@@ -120,7 +118,7 @@
       const tr = document.createElement("tr");
       const cell = td(text);
       cell.colSpan = cols;
-      cell.className = "muted";
+      cell.className = "empty";
       tr.append(cell);
       tbody.append(tr);
     }
@@ -139,7 +137,7 @@
     function renderOutages(outages) {
       const body = $("outageRows");
       body.replaceChildren();
-      if (outages.length === 0) return emptyRow(body, 7, "No active outages.");
+      if (outages.length === 0) return emptyRow(body, 7, "No active outages. All quiet.");
       const sorted = [...outages].sort((a, b) => b.confidence - a.confidence ||
         new Date(b.updatedAt) - new Date(a.updatedAt));
       for (const o of sorted) {
@@ -157,11 +155,27 @@
       }
     }
 
-    function renderReports(reports) {
+    function renderChips() {
+      const box = $("chips");
+      box.replaceChildren();
+      for (const [key, label] of FILTERS) {
+        const n = key === "ALL" ? reports.length : reports.filter((r) => r.status === key).length;
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "chip";
+        b.textContent = label + " (" + n + ")";
+        b.setAttribute("aria-pressed", String(filter === key));
+        b.addEventListener("click", () => { filter = key; renderChips(); renderReports(); });
+        box.append(b);
+      }
+    }
+
+    function renderReports() {
       const body = $("reportRows");
       body.replaceChildren();
-      if (reports.length === 0) return emptyRow(body, 4, "No reports yet.");
-      for (const r of reports) {
+      const shown = filter === "ALL" ? reports : reports.filter((r) => r.status === filter);
+      if (shown.length === 0) return emptyRow(body, 4, "No reports to show.");
+      for (const r of shown) {
         const tr = document.createElement("tr");
         tr.append(
           td(tag(r.status)),
@@ -174,19 +188,25 @@
     }
 
     async function load() {
+      const btn = $("refresh");
+      btn.disabled = true;
       try {
-        const [outages, reports] = await Promise.all([
+        const [outages, latest] = await Promise.all([
           api("/api/outages"),
-          api("/api/reports?page=0&size=15")
+          api("/api/reports?page=0&size=50")
         ]);
+        reports = latest;
         renderStats(outages);
         renderOutages(outages);
-        renderReports(reports);
-        $("updated").textContent = "Updated " + new Date().toLocaleTimeString() + " (refreshes every 30s)";
+        renderChips();
+        renderReports();
+        $("updated").textContent = "Live, updated " + new Date().toLocaleTimeString();
         $("err").textContent = "";
       } catch (e) { $("err").textContent = e.message; }
+      btn.disabled = false;
     }
 
+    $("refresh").addEventListener("click", load);
     load();
     setInterval(load, 30000);
 </script>
