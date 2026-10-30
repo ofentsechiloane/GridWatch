@@ -9,19 +9,14 @@ import java.time.Instant;
 })
 public class Device {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false, length = 100) private String name;
     @Column(nullable = false) private double latitude;
     @Column(nullable = false) private double longitude;
-
-    @Column(nullable = false, length = 64) private String apiKeyHash;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private DeviceStatus status = DeviceStatus.ACTIVE;
-
+    @Column(nullable = false, unique = true, length = 64) private String apiKeyHash;
     @Column(nullable = false, updatable = false) private Instant createdAt;
     private Instant lastSeenAt;
 
@@ -35,15 +30,13 @@ public class Device {
     @PrePersist
     void onCreate() { if (createdAt == null) createdAt = Instant.now(); }
 
-    public void touch() { this.lastSeenAt = Instant.now(); }
-    public void disable() { this.status = DeviceStatus.DISABLED; }
+    public void markSeen() { this.lastSeenAt = Instant.now(); }
 
     public Long getId() { return id; }
     public String getName() { return name; }
     public double getLatitude() { return latitude; }
     public double getLongitude() { return longitude; }
     public String getApiKeyHash() { return apiKeyHash; }
-    public DeviceStatus getStatus() { return status; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getLastSeenAt() { return lastSeenAt; }
 }

@@ -1,69 +1,242 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>GridWatch: Is it just me?</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
-<link rel="stylesheet" href="/css/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GridWatch: Is it just me?</title>
+    <script src="/js/theme.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+    <link rel="stylesheet" href="/css/app.css">
 </head>
 <body>
-<main>
-  <h1>GridWatch</h1>
-  <p class="sub">Is it just your house, or is the whole area down?</p>
-
-  <section class="card">
-    <div class="row">
-      <input id="lat" type="number" step="any" placeholder="Latitude" value="-26.2041">
-      <input id="lon" type="number" step="any" placeholder="Longitude" value="28.0473">
-      <button id="locate" type="button">Use my location</button>
+<header class="topbar">
+    <div class="topbar-inner">
+        <a class="brand" href="/">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>
+            <span>GridWatch</span>
+        </a>
+        <nav class="nav">
+            <a href="/" aria-current="page">Check</a>
+            <a href="/dashboard.html">Dashboard</a>
+        </nav>
+        <button id="themeToggle" class="icon-btn" type="button" aria-label="Toggle dark mode">
+            <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+            <svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        </button>
     </div>
-    <p class="muted" id="locMsg">Defaults to central Johannesburg. You can also click the map to set your location.</p>
-    <button id="check" type="button">Is it just me?</button>
-  </section>
+</header>
 
-  <section class="card" id="verdict" hidden>
-    <h2 id="vTitle"></h2>
-    <p id="vMsg"></p>
-    <p class="muted" id="vStats"></p>
-  </section>
-
-  <section class="card">
-    <strong>Outage map</strong>
-      <div id="stats" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px">
-          <span><strong id="sActive">0</strong> active</span>
-          <span><strong id="sConfirmed">0</strong> confirmed</span>
-          <span><strong id="sReports">0</strong> reports</span>
-          <span class="muted" id="sUpdated"></span>
-      </div>
-      <div class="muted" style="margin-top:4px">
-          <span style="color:#3b82f6">●</span> Possible
-          <span style="color:#f59e0b">●</span> Likely
-          <span style="color:#ef4444">●</span> Confirmed
-      </div>
-    <div id="map"></div>
-    <p class="muted">Circles show the affected area: red is confirmed, amber likely, blue possible.</p>
-  </section>
-
-  <section class="card">
-    <strong>Report your power status</strong>
-    <p class="muted">Your report helps neighbours get an answer.</p>
-    <div class="row">
-      <button class="off" data-status="OFF">Power OFF</button>
-      <button class="unstable" data-status="UNSTABLE">Unstable</button>
-      <button class="on" data-status="ON">Power ON</button>
-      <button class="restored" data-status="RESTORED">Restored</button>
+<main class="container">
+    <div class="page-head">
+        <div>
+            <h1>Is it just me?</h1>
+            <p class="muted">Is it just your house, or is the whole area down?</p>
+        </div>
     </div>
-    <p class="muted" id="reportMsg"></p>
-  </section>
 
-  <section class="card">
-    <strong>Active outages</strong>
-    <ul id="outages"><li class="muted">Loading...</li></ul>
-  </section>
+    <div class="layout">
+        <div class="stack">
+            <section class="card">
+                <div class="card-head">
+                    <h2>Your location</h2>
+                    <button id="locate" type="button" class="btn btn-ghost">Use my location</button>
+                </div>
+                <div class="row">
+                    <label class="field">Latitude<input id="lat" type="number" step="any" value="-26.2041"></label>
+                    <label class="field">Longitude<input id="lon" type="number" step="any" value="28.0473"></label>
+                </div>
+                <p class="muted" id="locMsg">Defaults to central Johannesburg. You can also click the map to set your location.</p>
+                <button id="check" type="button" class="btn btn-block">Is it just me?</button>
+            </section>
+
+            <section class="card verdict" id="verdict" hidden>
+                <h2 id="vTitle"></h2>
+                <p id="vMsg"></p>
+                <p class="muted" id="vStats"></p>
+            </section>
+
+            <section class="card">
+                <div class="card-head"><h2>Report your power status</h2></div>
+                <p class="muted" style="margin-top:0">Your report helps neighbours get an answer.</p>
+                <div class="report-grid">
+                    <button class="btn btn-red" data-status="OFF">Power OFF</button>
+                    <button class="btn btn-amber" data-status="UNSTABLE">Unstable</button>
+                    <button class="btn btn-green" data-status="ON">Power ON</button>
+                    <button class="btn btn-green" data-status="RESTORED">Restored</button>
+                </div>
+                <p class="muted" id="reportMsg"></p>
+            </section>
+
+            <section class="card">
+                <div class="card-head"><h2>Active outages</h2><a href="/dashboard.html">Full dashboard</a></div>
+                <ul id="outages" class="list"><li class="muted">Loading...</li></ul>
+            </section>
+        </div>
+
+        <aside class="card map-col">
+            <div class="card-head"><h2>Outage map</h2></div>
+            <div id="map"></div>
+            <div class="legend muted">
+                <span><i class="dot dot-red"></i>Confirmed</span>
+                <span><i class="dot dot-amber"></i>Likely</span>
+                <span><i class="dot dot-blue"></i>Possible</span>
+            </div>
+        </aside>
+    </div>
 </main>
 
+<div id="toast" class="toast" role="status" hidden></div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
-<script src="/js/app.js"></script>
+<script>
+    const $ = (id) => document.getElementById(id);
+    const TITLES = {
+      OUTAGE_IN_AREA: "Not just you: outage in your area",
+      LIKELY_JUST_YOU: "Probably just your property",
+      NOT_ENOUGH_DATA: "Not enough data yet"
+    };
+    const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    const statusColor = (s) => ({ CONFIRMED: css("--red"), LIKELY: css("--amber"), POSSIBLE: css("--blue") }[s] || css("--muted"));
+
+    let toastTimer;
+    function toast(msg) {
+      const t = $("toast");
+      t.textContent = msg;
+      t.hidden = false;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { t.hidden = true; }, 3500);
+    }
+
+    const map = L.map("map").setView([parseFloat($("lat").value), parseFloat($("lon").value)], 12);
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "&copy; OpenStreetMap contributors"
+    }).addTo(map);
+    const outageLayer = L.layerGroup().addTo(map);
+    const youMarker = L.marker([parseFloat($("lat").value), parseFloat($("lon").value)]).addTo(map);
+    youMarker.bindTooltip("You", { permanent: false });
+    window.addEventListener("resize", () => map.invalidateSize());
+
+    function moveYou(lat, lon, pan) {
+      $("lat").value = Number(lat).toFixed(5);
+      $("lon").value = Number(lon).toFixed(5);
+      youMarker.setLatLng([lat, lon]);
+      if (pan) map.setView([lat, lon], Math.max(map.getZoom(), 13));
+    }
+
+    map.on("click", (e) => {
+      moveYou(e.latlng.lat, e.latlng.lng, false);
+      $("locMsg").textContent = "Location set from the map.";
+    });
+
+    function syncFromInputs() {
+      const lat = parseFloat($("lat").value), lon = parseFloat($("lon").value);
+      if (!Number.isNaN(lat) && !Number.isNaN(lon)) {
+        youMarker.setLatLng([lat, lon]);
+        map.setView([lat, lon], map.getZoom());
+      }
+    }
+    $("lat").addEventListener("change", syncFromInputs);
+    $("lon").addEventListener("change", syncFromInputs);
+
+    function coords() {
+      const lat = parseFloat($("lat").value), lon = parseFloat($("lon").value);
+      if (Number.isNaN(lat) || Number.isNaN(lon)) throw new Error("Enter a valid latitude and longitude.");
+      return { lat, lon };
+    }
+
+    async function api(path, options) {
+      const res = await fetch(path, options);
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.message || "Request failed (" + res.status + ")");
+      return body;
+    }
+
+    async function checkJustMe() {
+      try {
+        const { lat, lon } = coords();
+        const v = await api("/api/outages/just-me?lat=" + lat + "&lon=" + lon);
+        $("verdict").hidden = false;
+        $("verdict").className = "card verdict " + v.verdict;
+        $("vTitle").textContent = TITLES[v.verdict];
+        $("vMsg").textContent = v.message;
+        $("vStats").textContent = v.offReports + " OFF/UNSTABLE and " + v.onReports +
+          " ON/RESTORED reports within " + v.radiusMeters + " m in the last " + v.minutes + " min.";
+      } catch (e) { toast(e.message); }
+    }
+
+    async function sendReport(status) {
+      try {
+        const { lat, lon } = coords();
+        await api("/api/reports", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status, latitude: lat, longitude: lon })
+        });
+        $("reportMsg").textContent = "Report sent: " + status + ".";
+        toast("Report sent: " + status);
+        await Promise.all([checkJustMe(), loadOutages()]);
+      } catch (e) { $("reportMsg").textContent = e.message; toast(e.message); }
+    }
+
+    async function loadOutages() {
+      const list = $("outages");
+      try {
+        const outages = await api("/api/outages");
+        list.replaceChildren();
+        outageLayer.clearLayers();
+
+        if (outages.length === 0) {
+          const li = document.createElement("li");
+          li.className = "empty";
+          li.textContent = "No active outages reported.";
+          list.append(li);
+          return;
+        }
+
+        for (const o of outages) {
+          const pct = Math.round(o.confidence * 100);
+          const summary = o.status + ": " + o.reportCount + " reports, confidence " + pct + "%";
+
+          const li = document.createElement("li");
+          const tag = document.createElement("span");
+          tag.className = "tag " + o.status;
+          tag.textContent = o.status;
+          const text = document.createElement("span");
+          text.textContent = o.reportCount + " reports, " + pct + "% confidence";
+          const where = document.createElement("span");
+          where.className = "muted";
+          where.textContent = o.centerLatitude.toFixed(3) + ", " + o.centerLongitude.toFixed(3);
+          li.append(tag, text, where);
+          list.append(li);
+
+          const color = statusColor(o.status);
+          const circle = L.circle([o.centerLatitude, o.centerLongitude], {
+            radius: Math.max(o.radiusMeters, 100),
+            color, fillColor: color, fillOpacity: 0.25, weight: 2
+          });
+          const popup = document.createElement("div");
+          popup.textContent = summary;
+          circle.bindPopup(popup);
+          circle.addTo(outageLayer);
+        }
+      } catch (e) { list.textContent = e.message; }
+    }
+
+    $("check").addEventListener("click", checkJustMe);
+    $("locate").addEventListener("click", () => {
+      if (!navigator.geolocation) { $("locMsg").textContent = "Geolocation is not supported."; return; }
+      navigator.geolocation.getCurrentPosition(
+        (p) => { moveYou(p.coords.latitude, p.coords.longitude, true);
+                 $("locMsg").textContent = "Using your location."; },
+        () => { $("locMsg").textContent = "Could not get your location. Enter it manually or click the map."; });
+    });
+    document.querySelectorAll("[data-status]").forEach((b) =>
+      b.addEventListener("click", () => sendReport(b.dataset.status)));
+    document.addEventListener("themechange", loadOutages);
+
+    loadOutages();
+    setInterval(loadOutages, 30000);
+</script>
 </body>
 </html>

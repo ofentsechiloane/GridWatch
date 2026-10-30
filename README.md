@@ -150,7 +150,8 @@ mvn test | grep -E "Tests run:|BUILD"
 
 ### Phase 4: Frontend
 - [x] "Is It Just Me?" endpoint
-- [ ] Dashboard, interactive map, confidence and affected areas
+- [x] Interactive map with affected areas (Leaflet)
+- [x] Dashboard
 - [x] "Is It Just Me?" screen (basic page at `/`)
 
 ### Phase 5: IoT
@@ -180,3 +181,5 @@ qualified supervision.
 Educational and development use for now.
 No Docker, or port 8080 busy? Run with the in-memory H2 database on another port: `mvn spring-boot:run -Dspring-boot.run.profiles=local -Dspring-boot.run.arguments=--server.port=8081`
 
+start http://localhost:8080
+start http://localhost:8080/dashboard.html

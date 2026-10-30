@@ -16,7 +16,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/index.html", "/css/**", "/js/**", "/api/reports/**", "/api/outages/**", "/api/devices/**",
+                        .requestMatchers("/", "/index.html", "/dashboard.html", "/css/**", "/js/**", "/api/reports/**", "/api/outages/**", "/api/devices/**",
                                 "/actuator/health", "/error").permitAll()
                         .anyRequest().authenticated()
                 )
@@ -25,3 +25,6 @@ public class SecurityConfig {
         return http.build();
     }
 }
+
+
+
