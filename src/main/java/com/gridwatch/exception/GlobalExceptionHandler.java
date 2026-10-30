@@ -65,4 +65,9 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiError(
                 Instant.now(), 404, "Not Found", ex.getMessage(), Map.of()));
     }
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<ApiError> handleUnauthorized(UnauthorizedException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiError(
+                Instant.now(), 401, "Unauthorized", ex.getMessage(), Map.of()));
+    }
 }

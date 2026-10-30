@@ -3,7 +3,11 @@ package com.gridwatch.service;
 import com.gridwatch.dto.DeviceRegistrationResponse;
 import com.gridwatch.dto.DeviceRequest;
 import com.gridwatch.dto.DeviceResponse;
+import com.gridwatch.dto.ReportRequest;
+import com.gridwatch.dto.ReportResponse;
+import com.gridwatch.exception.UnauthorizedException;
 import com.gridwatch.model.Device;
+import com.gridwatch.model.ElectricityStatus;
 import com.gridwatch.repository.DeviceRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,9 +26,20 @@ public class DeviceService {
 
     private static final SecureRandom RANDOM = new SecureRandom();
     private final DeviceRepository repository;
+    private final ReportService reportService;
 
-    public DeviceService(DeviceRepository repository) {
+    public DeviceService(DeviceRepository repository, ReportService reportService) {
         this.repository = repository;
+        this.reportService = reportService;
+    }
+
+    @Transactional
+    public ReportResponse recordEvent(String apiKey, ElectricityStatus status) {
+        Device device = authenticate(apiKey)
+                .orElseThrow(() -> new UnauthorizedException("Invalid or missing API key"));
+        device.markSeen();
+        return reportService.create(new ReportRequest(
+                status, device.getLatitude(), device.getLongitude(), "device:" + device.getName()));
     }
 
     @Transactional
