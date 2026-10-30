@@ -6,7 +6,7 @@ A cloud-based community and IoT electricity outage detection platform. Residents
 sensors report power status, GridWatch clusters those reports by location and time, and
 shows who is affected on a live map.
 
-- Live app: `https://<your-service>.onrender.com`
+- Live app: `https://gridwatch-cktr.onrender.com`
 - UI (GitHub Pages): `https://ofentsechiloane.github.io/GridWatch/`
 - Repo: https://github.com/ofentsechiloane/GridWatch
 

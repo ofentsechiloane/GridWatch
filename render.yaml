@@ -10,13 +10,7 @@ services:
         value: prod
       - key: JAVA_TOOL_OPTIONS
         value: -XX:+UseSerialGC -XX:TieredStopAtLevel=1
-      - key: DB_PORT
-        value: "5432"
-      - key: DB_PARAMS
-        value: "?sslmode=require"
-      - key: DB_HOST
-        sync: false
-      - key: DB_NAME
+      - key: DB_URL
         sync: false
       - key: DB_USER
         sync: false
