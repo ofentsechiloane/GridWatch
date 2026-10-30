@@ -183,3 +183,6 @@ No Docker, or port 8080 busy? Run with the in-memory H2 database on another port
 
 start http://localhost:8080
 start http://localhost:8080/dashboard.html
+
+xdg-open http://localhost:8080
+xdg-open http://localhost:8080/dashboard.html

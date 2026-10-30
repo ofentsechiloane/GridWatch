@@ -4,20 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>GridWatch: Is it just me?</title>
-    <script src="/js/theme.js"></script>
+    <script src="js/theme.js"></script>
+    <script src="js/config.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
-    <link rel="stylesheet" href="/css/app.css">
+    <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
 <header class="topbar">
     <div class="topbar-inner">
-        <a class="brand" href="/">
+        <a class="brand" href="./">
             <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>
             <span>GridWatch</span>
         </a>
         <nav class="nav">
-            <a href="/" aria-current="page">Check</a>
-            <a href="/dashboard.html">Dashboard</a>
+            <a href="./" aria-current="page">Check</a>
+            <a href="dashboard.html">Dashboard</a>
         </nav>
         <button id="themeToggle" class="icon-btn" type="button" aria-label="Toggle dark mode">
             <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
@@ -68,7 +69,7 @@
             </section>
 
             <section class="card">
-                <div class="card-head"><h2>Active outages</h2><a href="/dashboard.html">Full dashboard</a></div>
+                <div class="card-head"><h2>Active outages</h2><a href="dashboard.html">Full dashboard</a></div>
                 <ul id="outages" class="list"><li class="muted">Loading...</li></ul>
             </section>
         </div>
@@ -146,7 +147,7 @@
     }
 
     async function api(path, options) {
-      const res = await fetch(path, options);
+      const res = await fetch((window.API_BASE || "") + path, options);
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.message || "Request failed (" + res.status + ")");
       return body;
