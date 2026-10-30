@@ -1,0 +1,40 @@
+databases:
+  - name: gridwatch-db
+    plan: free
+    databaseName: gridwatch
+    user: gridwatch
+
+services:
+  - type: web
+    name: gridwatch
+    runtime: docker
+    plan: free
+    healthCheckPath: /actuator/health
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: JAVA_TOOL_OPTIONS
+        value: -XX:+UseSerialGC -XX:TieredStopAtLevel=1
+      - key: DB_HOST
+        fromDatabase:
+          name: gridwatch-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: gridwatch-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: gridwatch-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: gridwatch-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: gridwatch-db
+          property: password
+      - key: ADMIN_KEY
+        generateValue: true

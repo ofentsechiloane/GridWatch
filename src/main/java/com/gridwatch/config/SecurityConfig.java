@@ -17,7 +17,7 @@ public class SecurityConfig {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/index.html", "/dashboard.html", "/css/**", "/js/**", "/api/reports/**", "/api/outages/**", "/api/devices/**",
-                                "/actuator/health", "/error").permitAll()
+                                "/actuator/health", "/actuator/prometheus", "/error").permitAll()
                         .anyRequest().authenticated()
                 )
                 .httpBasic(AbstractHttpConfigurer::disable)
